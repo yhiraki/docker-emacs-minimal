@@ -1,0 +1,15 @@
+from ubuntu:18.04
+
+run apt-get update \
+  && apt-get install -y \
+  wget \
+  libncurses-dev \
+  build-essential
+
+run wget http://ftpmirror.gnu.org/emacs/emacs-26.1.tar.gz \
+  && tar xf emacs-26.1.tar.gz \
+  && rm emacs-26.1.tar.gz
+
+workdir emacs-26.1
+
+run ./configure --prefix=/usr/local/ --with-x-toolkit=no --without-x --without-all
