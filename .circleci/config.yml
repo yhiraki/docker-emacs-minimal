@@ -35,7 +35,9 @@ jobs:
           command: docker commit $(docker container ps -aq -f name=builder) builder
       - run:
           name: create minimal image
-          command: docker build . --cache-from=app -t app
+          command: |
+            docker tag builder emacs-builder
+            docker build . --cache-from=app -t app
 
       - run:
           name: Save Docker image layer cache
