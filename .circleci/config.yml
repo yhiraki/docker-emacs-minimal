@@ -53,5 +53,5 @@ jobs:
           name: deploy image
           command: |
             docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-            docker tag app ${DOCKER_USER}/emacs-minimal:emacs26.1
-            docker push ${DOCKER_USER}/emacs-minimal:emacs26.1
+            docker tag app ${DOCKER_USER}/emacs-minimal:26.1
+            docker push ${DOCKER_USER}/emacs-minimal:26.1
