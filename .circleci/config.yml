@@ -1,0 +1,60 @@
+version: 2
+jobs:
+  build:
+    working_directory: /app
+    docker:
+      - image: docker:18.06.3-ce-git
+
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - v1-{{ .Branch }}
+          paths:
+            - /caches/app.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /caches/app.tar | true
+
+      - run:
+          name: ./configure
+          command: docker build . -f Dockerfile-builder --cache-from=builder -t builder
+      - run:
+          name: make && make install
+          command: |
+            docker run \
+              --security-opt seccomp=unconfined \
+              --name builder \
+              builder \
+              bash -c "make && make install"
+      - run:
+          name: docker commit builder
+          command: docker commit $(docker container ps -aq -f name=builder) builder
+      - run:
+          name: create minimal image
+          command: |
+            docker tag builder emacs-builder
+            docker build . --cache-from=app -t app
+
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/app.tar builder app
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/app.tar
+
+      - run:
+          name: deploy image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]
+            then
+              docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+              docker tag app ${DOCKER_USER}/emacs-minimal:26.1
+              docker push ${DOCKER_USER}/emacs-minimal:26.1
+            fi
